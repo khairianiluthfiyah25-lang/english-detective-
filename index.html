@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Detective</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Trebuchet MS', sans-serif;
+  background: #f7f2eb;
+  color: #51483f;
+  text-align: center;
+}
+
+header {
+  background: #d9c8b5;
+  padding: 22px;
+}
+
+h1 {
+  margin: 0;
+  color: #51483f;
+}
+
+main {
+  max-width: 650px;
+  margin: 35px auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 22px;
+  box-shadow: 0 5px 18px #00000010;
+  margin: 18px 0;
+}
+
+button {
+  background: #a58b73;
+  color: white;
+  border: none;
+  padding: 13px 20px;
+  margin: 7px;
+  border-radius: 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #806951;
+}
+
+.option {
+  display: block;
+  width: 100%;
+  background: #eee5dc;
+  color: #51483f;
+}
+
+.option:hover {
+  background: #dfcbb8;
+}
+
+#feedback {
+  font-weight: bold;
+  margin: 18px;
+}
+
+.small {
+  color: #897b6c;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🕵️ English Detective</h1>
+  <p>Read the clues. Solve the mystery!</p>
+</header>
+
+<main>
+  <section id="home" class="card">
+    <h2>Welcome, Detective! 🔎</h2>
+    <p>Are you ready to solve some mysteries?</p>
+    <p>Read the clues carefully and find the correct answers.</p>
+    <button onclick="showLocations()">Start Game</button>
+  </section>
+
+  <section id="locations" class="card" hidden>
+    <h2>Choose Your Location</h2>
+    <div id="locationButtons"></div>
+  </section>
+
+  <section id="game" class="card" hidden>
+    <p id="locationName" class="small"></p>
+    <h2 id="caseTitle"></h2>
+    <p id="story"></p>
+    <h3 id="question"></h3>
+    <div id="options"></div>
+    <p id="feedback"></p>
+    <div id="vocabulary"></div>
+    <button id="nextButton" onclick="nextCase()" hidden>
+      Next Case →
+    </button>
+    <button onclick="showLocations()">Back to Locations</button>
+  </section>
+
+  <section id="finish" class="card" hidden>
+    <h2>🎉 Great Job, Detective!</h2>
+    <p>You have completed all the cases in this location.</p>
+    <button onclick="showLocations()">Choose Another Location</button>
+  </section>
+</main>
+
+<script>
+const cases = {
+  "Living Room": [
+    {
+      title: "The Missing Remote",
+      story: "Mia cannot find the television remote. She remembers putting it on the sofa. After looking carefully, she finds it under a blue cushion.",
+      question: "Where is the television remote?",
+      options: ["Under a blue cushion", "On the table", "Beside the door"],
+      answer: 0,
+      word: "Cushion",
+      meaning: "Bantal sofa"
+    },
+    {
+      title: "The Lost Book",
+      story: "Tom is looking for his favorite book. He last read it in the living room. He finds the book beside the blue armchair.",
+      question: "Where is Tom's book?",
+      options: ["Under the sofa", "Beside the blue armchair", "On the television"],
+      answer: 1,
+      word: "Armchair",
+      meaning: "Kursi berlengan"
+    }
+  ],
+
+  "Garden": [
+    {
+      title: "Where Is Toby?",
+      story: "Toby is a little dog who loves playing outside. His owner looks around the garden and finds him sleeping under a big tree.",
+      question: "Where is Toby?",
+      options: ["Behind the house", "Under a big tree", "Near the gate"],
+      answer: 1,
+      word: "Sleeping",
+      meaning: "Sedang tidur"
+    },
+    {
+      title: "The Missing Watering Can",
+      story: "Lily wants to water her flowers. She looks for her watering can and finds it next to the flower pots.",
+      question: "Where is the watering can?",
+      options: ["Next to the flower pots", "Inside the house", "Behind the tree"],
+      answer: 0,
+      word: "Watering can",
+      meaning: "Alat penyiram tanaman"
+    }
+  ],
+
+  "Bedroom": [
+    {
+      title: "The Secret Message",
+      story: "Anna finds a small note in her bedroom. She looks around and notices a round clock on the wall above her desk.",
+      question: "Where is the clock?",
+      options: ["Under the bed", "Above the desk", "Beside the window"],
+      answer: 1,
+      word: "Above",
+      meaning: "Di atas"
+    },
+    {
+      title: "The Disappearing Pencil",
+      story: "Ben cannot find his pencil. He checks his desk and discovers the pencil inside his pencil case.",
+      question: "Where is Ben's pencil?",
+      options: ["Inside his pencil case", "Under his bed", "On the bookshelf"],
+      answer: 0,
+      word: "Discover",
+      meaning: "Menemukan"
+    }
+  ]
+};
+
+let currentLocation = "";
+let currentCase = 0;
+let solved = 0;
+let answered = false;
+
+function hideAll() {
+  ["home", "locations", "game", "finish"].forEach(id => {
+    document.getElementById(id).hidden = true;
+  });
+}
+
+function showLocations() {
+  hideAll();
+  document.getElementById("locations").hidden = false;
+
+  const container = document.getElementById("locationButtons");
+  container.innerHTML = "";
+
+  Object.keys(cases).forEach(location => {
+    const button = document.createElement("button");
+    button.textContent = location;
+    button.onclick = () => startLocation(location);
+    container.appendChild(button);
+  });
+}
+
+function startLocation(location) {
+  currentLocation = location;
+  currentCase = 0;
+  solved = 0;
+  loadCase();
+}
+
+function loadCase() {
+  hideAll();
+  document.getElementById("game").hidden = false;
+
+  const item = cases[currentLocation][currentCase];
+
+  document.getElementById("locationName").textContent =
+    "📍 " + currentLocation;
+
+  document.getElementById("caseTitle").textContent =
+    "🔎 " + item.title;
+
+  document.getElementById("story").textContent = item.story;
+  document.getElementById("question").textContent = item.question;
+
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("vocabulary").textContent = "";
+
+  document.getElementById("nextButton").hidden = true;
+
+  answered = false;
+
+  const options = document.getElementById("options");
+  options.innerHTML = "";
+
+  item.options.forEach((option, index) => {
+    const button = document.createElement("button");
+    button.textContent = option;
+    button.className = "option";
+    button.onclick = () => checkAnswer(index);
+    options.appendChild(button);
+  });
+}
+
+function checkAnswer(index) {
+  if (answered) return;
+
+  const item = cases[currentLocation][currentCase];
+  const feedback = document.getElementById("feedback");
+
+  if (index === item.answer) {
+    answered = true;
+    solved++;
+
+    feedback.textContent = "🎉 Correct! Excellent work, Detective!";
+
+    document.getElementById("vocabulary").innerHTML =
+      "<h3>📚 New Vocabulary</h3>" +
+      "<b>" + item.word + "</b>: " + item.meaning;
+
+    document.getElementById("nextButton").hidden = false;
+  } else {
+    feedback.textContent =
+      "Not quite! Read the clues again and try once more. 🔍";
+  }
+}
+
+function nextCase() {
+  currentCase++;
+
+  if (currentCase < cases[currentLocation].length) {
+    loadCase();
+  } else {
+    hideAll();
+    document.getElementById("finish").hidden = false;
+    document.querySelector("#finish p").textContent =
+      "You solved " + solved + " cases in " + currentLocation + "!";
+  }
+}
+</script>
+
+</body>
+</html>
